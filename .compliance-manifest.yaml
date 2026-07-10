@@ -13,6 +13,7 @@ technology_contexts:
   - github
   - github-actions
   - terraform
+  - agent
 
 waiver_ids: []
 
