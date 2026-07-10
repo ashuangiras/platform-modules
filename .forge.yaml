@@ -1,0 +1,7 @@
+compliance_ref: "v2.6.0"
+profile: "PROF-TERRAFORM-MODULE-V1"
+repo_type: "terraform-module"
+technology_contexts:
+  - github
+  - github-actions
+  - terraform
