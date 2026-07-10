@@ -1,6 +1,6 @@
 <!--
   Pull request template for platform-modules.
-  Governed by platform-compliance v2.6.0, profile PROF-TERRAFORM-MODULE-V1.
+  Governed by platform-compliance v3.3.2, profile PROF-TERRAFORM-MODULE-V1.
 -->
 
 ## Summary
@@ -22,9 +22,10 @@ Change Record: CHG-YYYYMMDD-NNN
 
 **Readiness check** — confirm before merge:
 
-- [ ] Agent configuration still passes the AGT suite locally (`tools/check-agents.sh`)
-- [ ] Any new/changed workflow, control, or convention is reflected in the relevant agent instructions
-- [ ] The pre-flight / post-flight checklists and specialist tool scopes are still accurate
+- [ ] `terraform fmt -check -recursive .` exits 0
+- [ ] `tfsec .` shows no unresolved HIGH/CRITICAL findings
+- [ ] `module-reviewer` has reviewed this change
+- [ ] Compliance gate CI is green (or BLOCK failures are waived)
 
 **Retrospective** — what did this change teach us, and how did the agents improve?
 
