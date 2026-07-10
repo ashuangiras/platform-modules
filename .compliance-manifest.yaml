@@ -1,0 +1,20 @@
+schema_version: "1.0.0"
+
+repository:
+  name: platform-modules
+  url: "https://github.com/ashuangiras/platform-modules"
+  type: terraform-module
+  has_container_images: false
+
+declared_profiles:
+  - PROF-TERRAFORM-MODULE-V1
+
+technology_contexts:
+  - github
+  - github-actions
+  - terraform
+
+waiver_ids: []
+
+compliance_contact: platform-team
+last_updated: "2026-07-10"
