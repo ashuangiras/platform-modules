@@ -88,3 +88,9 @@ variable "keys_path" {
   type        = string
   default     = "~/.platform/vault-keys.json"
 }
+
+variable "logs_path" {
+  description = "Absolute host path for Vault audit logs. Mounted at /vault/logs inside the container. Create this directory before apply."
+  type        = string
+  default     = ""
+}

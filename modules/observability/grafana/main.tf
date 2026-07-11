@@ -38,7 +38,20 @@ resource "docker_container" "grafana" {
       "GF_DATASOURCES_DEFAULT_ACCESS=proxy",
       "GF_DATASOURCES_DEFAULT_IS_DEFAULT=true",
     ],
-    var.admin_password != "" ? ["GF_SECURITY_ADMIN_PASSWORD=${var.admin_password}"] : []
+    var.admin_password != "" ? ["GF_SECURITY_ADMIN_PASSWORD=${var.admin_password}"] : [],
+    # Authentik OIDC — injected when oidc_config is provided (RUN-009 / RUN-009b)
+    var.oidc_config != null ? [
+      "GF_AUTH_GENERIC_OAUTH_ENABLED=true",
+      "GF_AUTH_GENERIC_OAUTH_NAME=${var.oidc_config.name}",
+      "GF_AUTH_GENERIC_OAUTH_CLIENT_ID=${var.oidc_config.client_id}",
+      "GF_AUTH_GENERIC_OAUTH_CLIENT_SECRET=${var.oidc_config.client_secret}",
+      "GF_AUTH_GENERIC_OAUTH_SCOPES=openid email profile",
+      "GF_AUTH_GENERIC_OAUTH_AUTH_URL=${var.oidc_config.auth_url}",
+      "GF_AUTH_GENERIC_OAUTH_TOKEN_URL=${var.oidc_config.token_url}",
+      "GF_AUTH_GENERIC_OAUTH_API_URL=${var.oidc_config.api_url}",
+      "GF_AUTH_GENERIC_OAUTH_ROLE_ATTRIBUTE_PATH=contains(groups[*], 'platform-admins') && 'Admin' || 'Viewer'",
+      "GF_AUTH_GENERIC_OAUTH_USE_PKCE=true",
+    ] : []
   )
 
   ports {
