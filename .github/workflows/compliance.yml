@@ -1,7 +1,7 @@
 name: "Compliance: Merge Gate"
 
 # Runs the platform-compliance governance pipeline on every PR and push.
-# Calls the reusable workflow from platform-compliance pinned to v4.0.0.
+# Calls the reusable workflow from platform-compliance pinned to v4.0.3.
 # Required for branch protection — the "Compliance: Merge Gate" status check must pass.
 
 on:
@@ -16,7 +16,7 @@ permissions: read-all
 jobs:
   merge-gate:
     name: "Compliance: Merge Gate"
-    uses: ashuangiras/platform-compliance/.github/workflows/reusable-compliance.yml@v4.0.0
+    uses: ashuangiras/platform-compliance/.github/workflows/reusable-compliance.yml@v4.0.3
     secrets: inherit
     permissions:
       contents: read
@@ -28,4 +28,4 @@ jobs:
       repository-type: terraform-module
       technology-contexts: "github,github-actions,terraform,agent"
       has-container-images: false
-      platform-compliance-ref: v4.0.0
+      platform-compliance-ref: v4.0.3
