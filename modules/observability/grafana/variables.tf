@@ -1,0 +1,51 @@
+variable "container_name" {
+  description = "Name of the Grafana Docker container."
+  type        = string
+  default     = "grafana"
+}
+
+variable "image_tag" {
+  description = "Grafana Docker image tag. Pin to a specific release. See https://hub.docker.com/r/grafana/grafana/tags"
+  type        = string
+  default     = "11.3.0"
+}
+
+variable "data_path" {
+  description = "Absolute path on the host for Grafana data (dashboards, datasources, users). Must exist and be writable by UID 472 (grafana)."
+  type        = string
+}
+
+variable "http_port" {
+  description = "Host port to expose the Grafana UI."
+  type        = number
+  default     = 3000
+}
+
+variable "network_name" {
+  description = "Docker network to attach the Grafana container to."
+  type        = string
+}
+
+variable "prometheus_url" {
+  description = "URL of the Prometheus instance to configure as the default data source. Use the internal Docker network address."
+  type        = string
+}
+
+variable "admin_password" {
+  description = "Grafana admin password (sensitive). Set via TF_VAR or Vault."
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "restart_policy" {
+  description = "Docker restart policy."
+  type        = string
+  default     = "unless-stopped"
+}
+
+variable "labels" {
+  description = "Additional Docker labels."
+  type        = map(string)
+  default     = {}
+}
