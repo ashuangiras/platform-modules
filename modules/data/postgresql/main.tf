@@ -24,6 +24,11 @@ resource "docker_container" "postgresql" {
   image   = docker_image.postgresql.image_id
   restart = var.restart_policy
 
+  # Wait for the container healthcheck to pass before Terraform proceeds.
+  # This prevents the postgresql provider from racing against startup.
+  wait         = true
+  wait_timeout = 120
+
   # Set to "" for image default (postgres runs as UID 999 internally via gosu)
   user = var.run_as_user != "" ? var.run_as_user : null
 
