@@ -73,7 +73,7 @@ resource "docker_container" "server" {
     interval     = "30s"
     timeout      = "10s"
     retries      = 5
-    start_period = "60s"
+    start_period = "1m0s"
   }
 
   dynamic "labels" {
@@ -106,7 +106,7 @@ resource "docker_container" "worker" {
     interval     = "30s"
     timeout      = "10s"
     retries      = 5
-    start_period = "60s"
+    start_period = "1m0s"
   }
 
   dynamic "labels" {
