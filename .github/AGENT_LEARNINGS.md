@@ -13,6 +13,7 @@ This ledger records meaningful updates to the agent configuration in `platform-m
 - Added an explicit `## Safety` section to `.github/copilot-instructions.md` to satisfy AGT-012 robustly (literal `do not` guidance rather than an incidental keyword match).
 - Renamed the display `name:` of the compliance-gate and pr-engineer agents to "Module Compliance Gate" / "Module PR Engineer" to avoid cross-repo agent name collisions.
 - Added a `.github/hooks/` PreToolUse safety guard (`guard-destructive-ops.json` + executable `scripts/guard-destructive-ops.sh`) to satisfy AGT-008, which v4.0.0 promoted to `block` for `agent`-context repos; the collector's `hooks.guard_ok` was `false` because the hooks directory was absent.
+- MinIO module now sets `CI=true` in the container `env` so the RUN-008 512 MiB memory cap doesn't OOM-kill the container before its healthcheck goes ready (P1 review finding).
 
 **Rule learned:** When adopting a MAJOR platform-compliance release, the manifest `technology_contexts` and the CI workflow's `technology-contexts` input must be kept in lock-step — declaring a context in the manifest without feeding it to the reusable workflow puts controls in-scope with zero evidence and hard-fails the gate. Agent instruction files must satisfy AGT-012 with explicit, literal safety language, not incidental keyword hits.
 

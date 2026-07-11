@@ -35,6 +35,9 @@ resource "docker_container" "minio" {
   env = [
     "MINIO_ROOT_USER=${var.root_user}",
     "MINIO_ROOT_PASSWORD=${var.root_password}",
+    # CI=true disables MinIO's large memory pre-allocation so the container starts
+    # healthily under the RUN-008 memory cap (memory_limit_mib, default 512 MiB).
+    "CI=true",
   ]
 
   ports {
