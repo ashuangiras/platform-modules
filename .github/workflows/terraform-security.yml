@@ -28,3 +28,4 @@ jobs:
           soft_fail: false
           format: lovely
           working_directory: "."
+          github_token: ${{ github.token }}
