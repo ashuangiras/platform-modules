@@ -1,0 +1,38 @@
+name: "Drift Detection — Terraform Validate (IAC-005)"
+
+# Daily validation of all module configurations.
+# Detects configuration drift (broken syntax, provider schema changes, invalid references).
+# A full terraform plan against live infrastructure requires credentials not available in CI;
+# the operator should run `terraform plan` locally when this workflow flags issues.
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # daily at 06:00 UTC
+  workflow_dispatch:       # allow manual trigger
+
+permissions: read-all
+
+jobs:
+  validate:
+    name: "IAC-005 — Drift detection (validate all modules)"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.9"
+
+      - name: Validate all module directories
+        run: |
+          set -e
+          failed=0
+          for dir in $(find modules -name "versions.tf" | xargs -I{} dirname {} | sort -u); do
+            echo "→ $dir"
+            terraform -chdir="$dir" init -backend=false -no-color 2>&1 | tail -1
+            terraform -chdir="$dir" validate -no-color || { echo "FAIL: $dir"; failed=1; }
+          done
+          exit $failed

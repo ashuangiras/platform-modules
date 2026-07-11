@@ -1,0 +1,27 @@
+name: "Release — SBOM (SUP-004)"
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions: read-all
+
+jobs:
+  release:
+    name: "Create release with SBOM"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          artifact-name: sbom.cdx.json
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: sbom.cdx.json
+          generate_release_notes: true
