@@ -33,14 +33,37 @@ variable "secret_key" {
   sensitive   = true
 }
 
-variable "database_url" {
-  description = "PostgreSQL connection URL for Authentik. Format: postgresql://user:pass@host:port/dbname. Read from Vault via Vault Agent."
+variable "pg_host" {
+  description = "PostgreSQL hostname on the Docker network (AUTHENTIK_POSTGRESQL__HOST)."
+  type        = string
+}
+
+variable "pg_port" {
+  description = "PostgreSQL port (AUTHENTIK_POSTGRESQL__PORT)."
+  type        = number
+  default     = 5432
+}
+
+variable "pg_user" {
+  description = "PostgreSQL username for Authentik (AUTHENTIK_POSTGRESQL__USER)."
+  type        = string
+  default     = "authentik"
+}
+
+variable "pg_password" {
+  description = "PostgreSQL password for Authentik (AUTHENTIK_POSTGRESQL__PASSWORD)."
   type        = string
   sensitive   = true
 }
 
+variable "pg_name" {
+  description = "PostgreSQL database name for Authentik (AUTHENTIK_POSTGRESQL__NAME)."
+  type        = string
+  default     = "authentik"
+}
+
 variable "redis_url" {
-  description = "Redis connection URL for Authentik. Format: redis://user:pass@host:port. Read from Vault via Vault Agent."
+  description = "Redis connection URL for Authentik (AUTHENTIK_REDIS__URL). Format: redis://user:pass@host:port."
   type        = string
   sensitive   = true
 }
@@ -55,6 +78,13 @@ variable "bootstrap_admin_password" {
   description = "Password for the Authentik bootstrap admin account. Written to Vault by the caller."
   type        = string
   sensitive   = true
+}
+
+variable "bootstrap_token" {
+  description = "Authentik API token created via AUTHENTIK_BOOTSTRAP_TOKEN env var on first startup. Used by Terraform integrations provider. Treat as a secret — store in vault_keys_path equivalent."
+  type        = string
+  sensitive   = true
+  default     = ""
 }
 
 variable "error_reporting_enabled" {
