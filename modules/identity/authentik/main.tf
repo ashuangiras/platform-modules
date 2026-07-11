@@ -1,14 +1,24 @@
 locals {
   # Common environment variables shared by server and worker
-  common_env = [
-    "AUTHENTIK_SECRET_KEY=${var.secret_key}",
-    "AUTHENTIK_POSTGRESQL__URL=${var.database_url}",
-    "AUTHENTIK_REDIS__URL=${var.redis_url}",
-    "AUTHENTIK_ERROR_REPORTING__ENABLED=${var.error_reporting_enabled}",
-    # Bootstrap admin — only applied on first run; ignored if admin already exists
-    "AUTHENTIK_BOOTSTRAP_EMAIL=${var.bootstrap_admin_email}",
-    "AUTHENTIK_BOOTSTRAP_PASSWORD=${var.bootstrap_admin_password}",
-  ]
+  common_env = concat(
+    [
+      "AUTHENTIK_SECRET_KEY=${var.secret_key}",
+      # PostgreSQL — Authentik requires individual vars, not a connection URL
+      "AUTHENTIK_POSTGRESQL__HOST=${var.pg_host}",
+      "AUTHENTIK_POSTGRESQL__PORT=${var.pg_port}",
+      "AUTHENTIK_POSTGRESQL__USER=${var.pg_user}",
+      "AUTHENTIK_POSTGRESQL__PASSWORD=${var.pg_password}",
+      "AUTHENTIK_POSTGRESQL__NAME=${var.pg_name}",
+      # Redis — URL format is supported by Authentik's aioredis client
+      "AUTHENTIK_REDIS__URL=${var.redis_url}",
+      "AUTHENTIK_ERROR_REPORTING__ENABLED=${var.error_reporting_enabled}",
+      # Bootstrap admin — only applied on first run; ignored if admin already exists
+      "AUTHENTIK_BOOTSTRAP_EMAIL=${var.bootstrap_admin_email}",
+      "AUTHENTIK_BOOTSTRAP_PASSWORD=${var.bootstrap_admin_password}",
+    ],
+    # Bootstrap API token — set once on first run; used by Terraform integrations provider
+    var.bootstrap_token != "" ? ["AUTHENTIK_BOOTSTRAP_TOKEN=${var.bootstrap_token}"] : []
+  )
 
   platform_labels = merge(
     {
