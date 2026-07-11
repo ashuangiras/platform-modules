@@ -4,6 +4,21 @@ This ledger records meaningful updates to the agent configuration in `platform-m
 
 ---
 
+## 2026-07-12 — chore: bump platform-compliance ref v4.0.0 → v4.0.3 (patch)
+
+**Change Record:** CHG-20260712-001
+
+- Bumped the compliance gate from platform-compliance **v4.0.0 → v4.0.3** in `.github/workflows/compliance.yml` in all three spots: the reusable-workflow `uses:` ref, the `platform-compliance-ref` input, and the stale "pinned to v4.0.0" header comment. Also corrected the stale `Compliance ref pinned to: v4.0.0` line in `.github/copilot-instructions.md`. `technology-contexts` was already correct and was left untouched.
+- v4.0.3 is a PATCH that (a) makes **SEC-001** (secret scanning) and **SUP-001** (Terraform dependency pinning) genuinely `block` — previously they were silently inert — and (b) fixes a **SUP-001** Terraform false-positive so pinned providers, `git::…?ref=<immutable-tag>` modules, and local `./` modules are correctly recognised as pinned.
+- **SUP-001 verified pass**: all 10 `versions.tf` (root + 9 modules) pin `required_version = "~> 1.9"` and every provider uses a `~>` constraint (docker `~> 3.0`, postgresql `~> 1.22`, null `~> 3.0`); the engine reported "All 12 provider(s) and 0 module(s) pinned" — no false-positive under v4.0.3, no fix needed.
+- **SEC-001 verified pass**: repo `secret_scanning` and `secret_scanning_push_protection` are both `enabled` (checked via `gh api`); no PATCH needed.
+- **SRC-001/002 confirmed** hardened at the branch-protection layer (strict status checks, ≥1 required review, code-owner reviews, `dismiss_stale_reviews=true`).
+- Full local merge-gate simulation (PROF-TERRAFORM-MODULE-V1 / merge_gate / contexts `github,github-actions,terraform,agent`) against the v4.0.3 policy bundle exited **0** — every BLOCK control passes; the only non-pass is the pre-existing warn-level IAC-005 (drift detection), which is non-blocking and unrelated to this bump.
+
+**Rule learned:** A "silently inert" control being promoted to `block` in a PATCH release is a real gate-tightening event even when the version delta looks trivial — re-simulate the whole gate with the new bundle rather than assuming a patch is a no-op. When bumping a pinned compliance ref, sweep for the version string in ALL locations (uses ref, ref input, header comments, and doc lines like copilot-instructions.md), not just the two functional spots, so `grep -rn <oldref> .github/` comes back clean (excluding historical ledger entries).
+
+---
+
 ## 2026-07-11 — chore: migrate to platform-compliance v4.0.0 (agent-context enforcement)
 
 **Change Record:** CHG-20260711-060

@@ -8,7 +8,7 @@ All governance rules — controls, profiles, policies, and the reusable CI workf
 
 > **[platform-compliance](https://github.com/ashuangiras/platform-compliance)** (mother repo)  
 > Profile applied to this repo: **`PROF-TERRAFORM-MODULE-V1`**  
-> Compliance ref pinned to: **`v4.0.0`** (see `.github/workflows/compliance.yml`)  
+> Compliance ref pinned to: **`v4.0.3`** (see `.github/workflows/compliance.yml`)  
 > Profile definition: [04-profiles/PROF-TERRAFORM-MODULE-V1.yaml](https://github.com/ashuangiras/platform-compliance/blob/main/04-profiles/PROF-TERRAFORM-MODULE-V1.yaml)
 
 Do **not** add governance objects (controls, policies, bindings) here. All governance changes go to platform-compliance.
