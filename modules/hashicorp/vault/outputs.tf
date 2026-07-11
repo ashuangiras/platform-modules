@@ -17,3 +17,15 @@ output "api_address_internal" {
   description = "Vault API address reachable from other containers on the same Docker network."
   value       = "http://${var.container_name}:${var.api_port}"
 }
+
+output "root_token" {
+  description = "Vault root token. Written to keys_path on first init. Sensitive."
+  value       = fileexists(pathexpand(var.keys_path)) ? jsondecode(file(pathexpand(var.keys_path)))["root_token"] : null
+  sensitive   = true
+  depends_on  = [null_resource.vault_init_unseal]
+}
+
+output "keys_path" {
+  description = "Path to the file containing Vault unseal keys and root token."
+  value       = pathexpand(var.keys_path)
+}
