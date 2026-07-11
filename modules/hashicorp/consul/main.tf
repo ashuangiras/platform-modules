@@ -35,8 +35,10 @@ resource "docker_container" "consul" {
   image   = docker_image.consul.image_id
   restart = var.restart_policy
 
-  # Run as the consul user (UID 100) — non-root per RUN-001
-  user = "100:1000"
+  # The hashicorp/consul image uses su-exec to switch to the consul user.
+  # Setting user here conflicts with su-exec on macOS Docker Desktop.
+  # Leave empty to use the image default; set to "100:1000" on Linux hosts.
+  user = var.run_as_user != "" ? var.run_as_user : null
 
   command = [
     "consul", "agent",

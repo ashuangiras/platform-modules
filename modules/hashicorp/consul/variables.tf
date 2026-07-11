@@ -54,6 +54,12 @@ variable "log_level" {
   }
 }
 
+variable "run_as_user" {
+  description = "User to run the container as (UID:GID). The hashicorp/consul image uses su-exec internally — set to empty string to let the image handle user switching (required on macOS Docker Desktop)."
+  type        = string
+  default     = ""
+}
+
 variable "restart_policy" {
   description = "Docker restart policy."
   type        = string

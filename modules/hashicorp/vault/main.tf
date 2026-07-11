@@ -35,14 +35,20 @@ resource "docker_container" "vault" {
   image   = docker_image.vault.image_id
   restart = var.restart_policy
 
-  # Vault requires IPC_LOCK to prevent secrets being swapped to disk
-  capabilities {
-    add  = var.capabilities
-    drop = ["ALL"]
+  # Vault requires IPC_LOCK to prevent secrets being swapped to disk.
+  # On macOS Docker Desktop, set drop_capabilities = [] and run_as_user = ""
+  # to avoid capability restriction errors.
+  dynamic "capabilities" {
+    for_each = length(var.capabilities) > 0 || length(var.drop_capabilities) > 0 ? [1] : []
+    content {
+      add  = var.capabilities
+      drop = var.drop_capabilities
+    }
   }
 
-  # Run as the vault user (UID 100) — non-root per RUN-001
-  user = "100:1000"
+  # Run as the vault user (UID 100) — non-root per RUN-001.
+  # Set run_as_user = "" to use the image default (macOS Docker Desktop).
+  user = var.run_as_user != "" ? var.run_as_user : null
 
   command = ["vault", "server", "-config=/vault/config"]
 
