@@ -143,13 +143,18 @@ resource "null_resource" "vault_init_unseal" {
 
       echo "[vault-unseal] Waiting for Vault at $VAULT_ADDR ..."
       for i in $(seq 1 30); do
-        STATUS=$(vault status -format=json 2>/dev/null || true)
-        [ -n "$STATUS" ] && break
+        # vault status exits 0=unsealed, 2=sealed, 1=error — capture output; || true handles 2
+        VAULT_STATUS=$(vault status -format=json 2>/dev/null || true)
+        [ -n "$VAULT_STATUS" ] && break
         [ "$i" -eq 30 ] && echo "[vault-unseal] ERROR: Vault did not respond after 60s" >&2 && exit 1
         sleep 2
       done
 
-      INITIALIZED=$(vault status -format=json 2>/dev/null | jq -r '.initialized')
+      # Parse from the already-captured status (avoids second call with non-zero exit)
+      VAULT_STATUS=$(vault status -format=json 2>/dev/null || true)
+      INITIALIZED=$(echo "$VAULT_STATUS" | jq -r '.initialized')
+      SEALED=$(echo "$VAULT_STATUS" | jq -r '.sealed')
+
       if [ "$INITIALIZED" = "false" ]; then
         echo "[vault-unseal] Initializing Vault (1-of-1 key share)..."
         vault operator init \
@@ -158,9 +163,9 @@ resource "null_resource" "vault_init_unseal" {
           -format=json > "$KEYS_FILE"
         chmod 600 "$KEYS_FILE"
         echo "[vault-unseal] Initialized. Keys written to $KEYS_FILE"
+        SEALED="true"
       fi
 
-      SEALED=$(vault status -format=json 2>/dev/null | jq -r '.sealed')
       if [ "$SEALED" = "true" ]; then
         if [ ! -f "$KEYS_FILE" ]; then
           echo "[vault-unseal] ERROR: Vault is sealed but $KEYS_FILE not found." >&2
