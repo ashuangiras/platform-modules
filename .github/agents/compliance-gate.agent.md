@@ -1,6 +1,6 @@
 ---
 description: "Use when the compliance gate is failing (CI jobs 1–7 on a PR), when interpreting an assessment report, or when deciding whether a waiver is needed. Knows PROF-TERRAFORM-MODULE-V1's merge and release gate controls, how to read policy failure output, and how to fix or waive non-compliant findings. Does NOT write Terraform modules or manage PRs."
-name: "Compliance Gate"
+name: "Module Compliance Gate"
 tools: [read, edit, search, execute, todo]
 user-invocable: true
 ---

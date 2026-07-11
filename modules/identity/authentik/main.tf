@@ -45,9 +45,11 @@ resource "docker_image" "authentik" {
 
 # ── Authentik Server ──────────────────────────────────────────────────────────
 resource "docker_container" "server" {
-  name    = "${var.container_name_prefix}-server"
-  image   = docker_image.authentik.image_id
-  restart = var.restart_policy
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+  name       = "${var.container_name_prefix}-server"
+  image      = docker_image.authentik.image_id
+  restart    = var.restart_policy
 
   user    = var.run_as_user != "" ? var.run_as_user : null
   command = ["server"]
@@ -88,9 +90,11 @@ resource "docker_container" "server" {
 # ── Authentik Worker ──────────────────────────────────────────────────────────
 # The worker handles background tasks: email, policies, flows, LDAP sync.
 resource "docker_container" "worker" {
-  name    = "${var.container_name_prefix}-worker"
-  image   = docker_image.authentik.image_id
-  restart = var.restart_policy
+  name       = "${var.container_name_prefix}-worker"
+  image      = docker_image.authentik.image_id
+  restart    = var.restart_policy
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
 
   user    = var.run_as_user != "" ? var.run_as_user : null
   command = ["worker"]

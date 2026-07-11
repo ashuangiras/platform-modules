@@ -35,6 +35,9 @@ resource "docker_container" "prometheus" {
   image   = docker_image.prometheus.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # prom/prometheus runs as nobody (UID 65534) by default — non-root per RUN-001
   user = "65534:65534"
 
