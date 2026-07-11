@@ -78,6 +78,15 @@ resource "docker_container" "vault" {
     read_only      = true
   }
 
+  # Audit log volume — only mounted when logs_path is set (SEC-014).
+  dynamic "volumes" {
+    for_each = var.logs_path != "" ? [1] : []
+    content {
+      host_path      = var.logs_path
+      container_path = "/vault/logs"
+    }
+  }
+
   networks_advanced {
     name = var.network_name
   }
