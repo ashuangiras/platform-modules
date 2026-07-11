@@ -49,3 +49,21 @@ variable "labels" {
   type        = map(string)
   default     = {}
 }
+
+variable "oidc_config" {
+  description = <<-EOT
+    Optional Authentik OAuth2/OIDC configuration for Grafana.
+    When set, GF_AUTH_GENERIC_OAUTH_* env vars are injected.
+    Keys: client_id, client_secret, auth_url, token_url, api_url, name (default "Authentik").
+  EOT
+  type = object({
+    client_id     = string
+    client_secret = string
+    auth_url      = string
+    token_url     = string
+    api_url       = string
+    name          = optional(string, "Authentik")
+  })
+  sensitive = true
+  default   = null
+}
