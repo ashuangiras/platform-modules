@@ -15,5 +15,6 @@ output "driver" {
 
 output "subnet" {
   description = "The CIDR subnet assigned to the network (from ipam_config if provided, otherwise Docker-assigned)."
-  value       = length(docker_network.this.ipam_config) > 0 ? docker_network.this.ipam_config[0].subnet : null
+  # ipam_config is a set — use one() to safely extract the single element, or null if empty.
+  value = length(docker_network.this.ipam_config) > 0 ? one(docker_network.this.ipam_config).subnet : null
 }
