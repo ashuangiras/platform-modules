@@ -35,6 +35,9 @@ resource "docker_container" "consul" {
   image   = docker_image.consul.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # The hashicorp/consul image uses su-exec to switch to the consul user.
   # Setting user here conflicts with su-exec on macOS Docker Desktop.
   # Leave empty to use the image default; set to "100:1000" on Linux hosts.

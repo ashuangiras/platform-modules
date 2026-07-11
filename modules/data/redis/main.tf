@@ -58,6 +58,9 @@ resource "docker_container" "redis" {
   image   = docker_image.redis.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   user = var.run_as_user != "" ? var.run_as_user : null
 
   # Load ACL file and enable AOF persistence
@@ -71,6 +74,8 @@ resource "docker_container" "redis" {
   ports {
     internal = 6379
     external = var.port
+    # NET-002: bind to localhost only — internal service, not for public access
+    ip = "127.0.0.1"
   }
 
   volumes {

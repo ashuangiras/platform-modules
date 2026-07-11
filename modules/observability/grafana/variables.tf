@@ -67,3 +67,15 @@ variable "oidc_config" {
   sensitive = true
   default   = null
 }
+
+variable "memory_limit_mib" {
+  description = "Container memory limit in MiB (RUN-008). 0 = no limit (not recommended)."
+  type        = number
+  default     = 256
+}
+
+variable "cpu_shares" {
+  description = "CPU shares for the container (relative weight, 1024 = 1 vCPU equivalent)."
+  type        = number
+  default     = 256
+}

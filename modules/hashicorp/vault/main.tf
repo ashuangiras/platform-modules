@@ -35,6 +35,9 @@ resource "docker_container" "vault" {
   image   = docker_image.vault.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # Vault requires IPC_LOCK to prevent secrets being swapped to disk.
   # On macOS Docker Desktop, set drop_capabilities = [] and run_as_user = ""
   # to avoid capability restriction errors.

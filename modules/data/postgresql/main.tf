@@ -24,6 +24,9 @@ resource "docker_container" "postgresql" {
   image   = docker_image.postgresql.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # Wait for the container healthcheck to pass before Terraform proceeds.
   # This prevents the postgresql provider from racing against startup.
   wait         = true
@@ -41,6 +44,8 @@ resource "docker_container" "postgresql" {
   ports {
     internal = 5432
     external = var.port
+    # NET-002: bind to localhost only — internal service, not for public access
+    ip = "127.0.0.1"
   }
 
   volumes {

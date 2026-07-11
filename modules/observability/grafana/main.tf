@@ -24,6 +24,9 @@ resource "docker_container" "grafana" {
   image   = docker_image.grafana.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # grafana/grafana runs as grafana user (UID 472) — non-root per RUN-001
   user = "472:472"
 

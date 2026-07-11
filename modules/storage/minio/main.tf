@@ -24,6 +24,9 @@ resource "docker_container" "minio" {
   image   = docker_image.minio.image_id
   restart = var.restart_policy
 
+  memory     = var.memory_limit_mib
+  cpu_shares = var.cpu_shares
+
   # Run as non-root user (RUN-001)
   user = "1000:1000"
 
