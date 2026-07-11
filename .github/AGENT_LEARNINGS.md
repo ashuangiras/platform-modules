@@ -4,6 +4,20 @@ This ledger records meaningful updates to the agent configuration in `platform-m
 
 ---
 
+## 2026-07-11 — chore: migrate to platform-compliance v4.0.0 (agent-context enforcement)
+
+**Change Record:** CHG-20260711-060
+
+- Bumped the compliance gate from platform-compliance **v3.3.2 → v4.0.0** in `.github/workflows/compliance.yml` (both the reusable-workflow `uses:` ref and `platform-compliance-ref`), and added `agent` to the workflow's `technology-contexts` input so the AGT-001..015 controls run with evidence (the manifest already declares `agent`; a workflow-input mismatch would leave those controls in-scope with no evidence and FAIL the gate).
+- v4.0.0 promotes AGT-001..015 to `block` and adds CAT-003 (manifest completeness) + newly enforces SEC-004 (Actions least-privilege) via the profile `inherits` chain.
+- Added an explicit `## Safety` section to `.github/copilot-instructions.md` to satisfy AGT-012 robustly (literal `do not` guidance rather than an incidental keyword match).
+- Renamed the display `name:` of the compliance-gate and pr-engineer agents to "Module Compliance Gate" / "Module PR Engineer" to avoid cross-repo agent name collisions.
+- Added a `.github/hooks/` PreToolUse safety guard (`guard-destructive-ops.json` + executable `scripts/guard-destructive-ops.sh`) to satisfy AGT-008, which v4.0.0 promoted to `block` for `agent`-context repos; the collector's `hooks.guard_ok` was `false` because the hooks directory was absent.
+
+**Rule learned:** When adopting a MAJOR platform-compliance release, the manifest `technology_contexts` and the CI workflow's `technology-contexts` input must be kept in lock-step — declaring a context in the manifest without feeding it to the reusable workflow puts controls in-scope with zero evidence and hard-fails the gate. Agent instruction files must satisfy AGT-012 with explicit, literal safety language, not incidental keyword hits.
+
+---
+
 ## 2026-07-11 — fix: resolve policy failures (SEC-005, LIC-001, SUP-004, IAC-005)
 
 **Change Record:** CHG-20260711-048

@@ -1,6 +1,6 @@
 ---
 description: "Use when opening a PR, merging a PR (bootstrap-merge for single-developer flow), tagging a module version, updating CHANGELOG.md, or allocating a Change Record. Owns branch-protection toggling, module version tagging, and release verification. Does NOT write Terraform code or diagnose compliance failures."
-name: "PR Engineer"
+name: "Module PR Engineer"
 tools: [read, edit, execute, github/*, todo]
 user-invocable: true
 ---
