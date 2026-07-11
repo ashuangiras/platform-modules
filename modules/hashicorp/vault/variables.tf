@@ -60,6 +60,18 @@ variable "capabilities" {
   default     = ["IPC_LOCK"]
 }
 
+variable "drop_capabilities" {
+  description = "Linux capabilities to drop. Set to [] on macOS Docker Desktop or environments that restrict capability management."
+  type        = list(string)
+  default     = ["ALL"]
+}
+
+variable "run_as_user" {
+  description = "User to run the container as (UID:GID). Set to empty string to use the image default (required on macOS Docker Desktop)."
+  type        = string
+  default     = "100:1000"
+}
+
 variable "labels" {
   description = "Additional Docker labels."
   type        = map(string)

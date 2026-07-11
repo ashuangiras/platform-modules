@@ -25,3 +25,13 @@ This ledger records meaningful updates to the agent configuration in `platform-m
 - **modules/data/redis**: shared Redis 7 with ACL-based per-service user isolation. `users.acl` generated from `acl_users` map and mounted read-only. `default` user always disabled. ACL changes trigger container replacement via `replace_triggered_by`.
 - **modules/identity/authentik**: Authentik server + worker. Takes external database_url and redis_url — does not embed its own database. Bootstrap admin credentials written to Vault. `run_as_user` variable follows the pattern established for Vault/Consul macOS compatibility.
 - Rule learned: modules that produce sensitive outputs (database credentials, connection strings) must always document that the caller is responsible for writing outputs to Vault immediately. The module should never be responsible for Vault writes — that belongs in the calling integration layer.
+
+---
+
+## 2026-07-11 — fix: optional user + capabilities for macOS Docker Desktop (CHG-20260711-053)
+
+**Change Record:** CHG-20260711-053
+
+- Vault module: `drop_capabilities` (default `["ALL"]`, set `[]` on macOS) and `run_as_user` (default `"100:1000"`, set `""` on macOS). The `drop = ["ALL"]` caused `CAP_SETFCAP: Operation not permitted` on macOS Docker Desktop.
+- Consul module: `run_as_user` variable (default `""`). The hashicorp/consul image uses `su-exec` internally — setting explicit user conflicts on macOS with `setgroups: Operation not permitted`.
+- Rule learned: security-hardening variables must be exposed. Production posture is the default; staging/macOS overrides come from the calling configuration.
