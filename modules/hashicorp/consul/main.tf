@@ -79,7 +79,7 @@ resource "docker_container" "consul" {
   volumes {
     volume_name    = docker_volume.config.name
     container_path = "/consul/config"
-    read_only      = true
+    # read_only = false: consul image entrypoint chowns /consul/config on startup
   }
 
   networks_advanced {
