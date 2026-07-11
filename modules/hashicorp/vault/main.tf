@@ -108,3 +108,72 @@ resource "docker_container" "vault" {
     }
   }
 }
+
+# ---------------------------------------------------------------------------
+# Auto-init and auto-unseal
+#
+# Vault starts in a sealed state after every restart. This null_resource runs
+# a local shell script (via the host vault CLI) that:
+#   1. Waits until the Vault API is reachable.
+#   2. Initialises Vault the first time (1-of-1 Shamir key) and writes the
+#      unseal key + root token to var.keys_path.
+#   3. Unseals Vault on every apply where the container ID changed (restart or
+#      recreation).
+#
+# Re-triggers only when the container is replaced (new ID). Idempotent: already-
+# unsealed Vault is detected and skipped.
+#
+# Security: var.keys_path contains plaintext secrets. Ensure the path is:
+#   - Outside the git repository
+#   - Readable only by the Terraform operator (chmod 600 is applied by the script)
+#   - Backed up and rotated per your key-management policy
+# ---------------------------------------------------------------------------
+resource "null_resource" "vault_init_unseal" {
+  triggers = {
+    container_id = docker_container.vault.id
+  }
+
+  provisioner "local-exec" {
+    # Expand ~ in keys_path using shell, create parent dir, then init/unseal.
+    command = <<-SHELL
+      set -euo pipefail
+      export VAULT_ADDR="http://127.0.0.1:${var.api_port}"
+      KEYS_FILE=$(eval echo "${var.keys_path}")
+      mkdir -p "$(dirname "$KEYS_FILE")"
+
+      echo "[vault-unseal] Waiting for Vault at $VAULT_ADDR ..."
+      for i in $(seq 1 30); do
+        STATUS=$(vault status -format=json 2>/dev/null || true)
+        [ -n "$STATUS" ] && break
+        [ "$i" -eq 30 ] && echo "[vault-unseal] ERROR: Vault did not respond after 60s" >&2 && exit 1
+        sleep 2
+      done
+
+      INITIALIZED=$(vault status -format=json 2>/dev/null | jq -r '.initialized')
+      if [ "$INITIALIZED" = "false" ]; then
+        echo "[vault-unseal] Initializing Vault (1-of-1 key share)..."
+        vault operator init \
+          -key-shares=1 \
+          -key-threshold=1 \
+          -format=json > "$KEYS_FILE"
+        chmod 600 "$KEYS_FILE"
+        echo "[vault-unseal] Initialized. Keys written to $KEYS_FILE"
+      fi
+
+      SEALED=$(vault status -format=json 2>/dev/null | jq -r '.sealed')
+      if [ "$SEALED" = "true" ]; then
+        if [ ! -f "$KEYS_FILE" ]; then
+          echo "[vault-unseal] ERROR: Vault is sealed but $KEYS_FILE not found." >&2
+          exit 1
+        fi
+        UNSEAL_KEY=$(jq -r '.unseal_keys_b64[0]' "$KEYS_FILE")
+        vault operator unseal "$UNSEAL_KEY" > /dev/null
+        echo "[vault-unseal] Vault unsealed."
+      else
+        echo "[vault-unseal] Vault is already unsealed."
+      fi
+    SHELL
+  }
+
+  depends_on = [docker_container.vault]
+}

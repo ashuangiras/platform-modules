@@ -77,3 +77,14 @@ variable "labels" {
   type        = map(string)
   default     = {}
 }
+
+variable "keys_path" {
+  description = <<-EOT
+    Absolute path on the host where Vault init output (unseal keys + root token) is stored.
+    Created on first init and read on every subsequent apply to unseal a restarted container.
+    This file contains plaintext secrets — it must never be committed to version control.
+    Recommended: a path outside the repo, e.g. ~/.platform/vault-keys.json.
+  EOT
+  type        = string
+  default     = "~/.platform/vault-keys.json"
+}
