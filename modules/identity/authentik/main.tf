@@ -9,8 +9,11 @@ locals {
       "AUTHENTIK_POSTGRESQL__USER=${var.pg_user}",
       "AUTHENTIK_POSTGRESQL__PASSWORD=${var.pg_password}",
       "AUTHENTIK_POSTGRESQL__NAME=${var.pg_name}",
-      # Redis — URL format is supported by Authentik's aioredis client
-      "AUTHENTIK_REDIS__URL=${var.redis_url}",
+      # Redis — individual vars (AUTHENTIK_REDIS__URL is not a valid config key)
+      "AUTHENTIK_REDIS__HOST=${var.redis_host}",
+      "AUTHENTIK_REDIS__PORT=${var.redis_port}",
+      "AUTHENTIK_REDIS__USERNAME=${var.redis_user}",
+      "AUTHENTIK_REDIS__PASSWORD=${var.redis_password}",
       "AUTHENTIK_ERROR_REPORTING__ENABLED=${var.error_reporting_enabled}",
       # Bootstrap admin — only applied on first run; ignored if admin already exists
       "AUTHENTIK_BOOTSTRAP_EMAIL=${var.bootstrap_admin_email}",

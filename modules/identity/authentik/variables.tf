@@ -62,10 +62,28 @@ variable "pg_name" {
   default     = "authentik"
 }
 
-variable "redis_url" {
-  description = "Redis connection URL for Authentik (AUTHENTIK_REDIS__URL). Format: redis://user:pass@host:port."
+variable "redis_host" {
+  description = "Redis hostname on the Docker network (AUTHENTIK_REDIS__HOST)."
+  type        = string
+}
+
+variable "redis_port" {
+  description = "Redis port (AUTHENTIK_REDIS__PORT)."
+  type        = number
+  default     = 6379
+}
+
+variable "redis_user" {
+  description = "Redis ACL username for Authentik (AUTHENTIK_REDIS__USERNAME). Empty string uses no-auth."
+  type        = string
+  default     = "authentik"
+}
+
+variable "redis_password" {
+  description = "Redis ACL password for Authentik (AUTHENTIK_REDIS__PASSWORD)."
   type        = string
   sensitive   = true
+  default     = ""
 }
 
 variable "bootstrap_admin_email" {
