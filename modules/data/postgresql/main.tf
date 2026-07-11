@@ -96,7 +96,9 @@ provider "postgresql" {
 }
 
 resource "postgresql_database" "services" {
-  for_each = var.databases
+  # Database names are not sensitive; use nonsensitive() so for_each can iterate
+  # even when var.databases contains sensitive password values.
+  for_each = nonsensitive(tomap({ for k, v in var.databases : k => v }))
 
   name              = each.key
   owner             = each.key
@@ -111,7 +113,7 @@ resource "postgresql_database" "services" {
 }
 
 resource "postgresql_role" "services" {
-  for_each = var.databases
+  for_each = nonsensitive(tomap({ for k, v in var.databases : k => v }))
 
   name     = each.key
   login    = true
@@ -121,7 +123,7 @@ resource "postgresql_role" "services" {
 }
 
 resource "postgresql_grant" "service_owner" {
-  for_each = var.databases
+  for_each = nonsensitive(tomap({ for k, v in var.databases : k => v }))
 
   database    = each.key
   role        = each.key
