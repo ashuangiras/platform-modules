@@ -1,0 +1,106 @@
+locals {
+  # Common environment variables shared by server and worker
+  common_env = [
+    "AUTHENTIK_SECRET_KEY=${var.secret_key}",
+    "AUTHENTIK_POSTGRESQL__URL=${var.database_url}",
+    "AUTHENTIK_REDIS__URL=${var.redis_url}",
+    "AUTHENTIK_ERROR_REPORTING__ENABLED=${var.error_reporting_enabled}",
+    # Bootstrap admin — only applied on first run; ignored if admin already exists
+    "AUTHENTIK_BOOTSTRAP_EMAIL=${var.bootstrap_admin_email}",
+    "AUTHENTIK_BOOTSTRAP_PASSWORD=${var.bootstrap_admin_password}",
+  ]
+
+  platform_labels = merge(
+    {
+      "platform.managed"   = "true"
+      "platform.component" = "identity"
+      "platform.service"   = "authentik"
+    },
+    var.labels
+  )
+}
+
+data "docker_registry_image" "authentik" {
+  name = "ghcr.io/goauthentik/server:${var.image_tag}"
+}
+
+resource "docker_image" "authentik" {
+  name          = data.docker_registry_image.authentik.name
+  pull_triggers = [data.docker_registry_image.authentik.sha256_digest]
+  keep_locally  = true
+}
+
+# ── Authentik Server ──────────────────────────────────────────────────────────
+resource "docker_container" "server" {
+  name    = "${var.container_name_prefix}-server"
+  image   = docker_image.authentik.image_id
+  restart = var.restart_policy
+
+  user    = var.run_as_user != "" ? var.run_as_user : null
+  command = ["server"]
+
+  env = local.common_env
+
+  ports {
+    internal = 9000
+    external = var.http_port
+  }
+
+  ports {
+    internal = 9443
+    external = var.https_port
+  }
+
+  networks_advanced {
+    name = var.network_name
+  }
+
+  healthcheck {
+    test         = ["CMD", "ak", "healthcheck"]
+    interval     = "30s"
+    timeout      = "10s"
+    retries      = 5
+    start_period = "60s"
+  }
+
+  dynamic "labels" {
+    for_each = local.platform_labels
+    content {
+      label = labels.key
+      value = labels.value
+    }
+  }
+}
+
+# ── Authentik Worker ──────────────────────────────────────────────────────────
+# The worker handles background tasks: email, policies, flows, LDAP sync.
+resource "docker_container" "worker" {
+  name    = "${var.container_name_prefix}-worker"
+  image   = docker_image.authentik.image_id
+  restart = var.restart_policy
+
+  user    = var.run_as_user != "" ? var.run_as_user : null
+  command = ["worker"]
+
+  env = local.common_env
+
+  networks_advanced {
+    name = var.network_name
+  }
+
+  healthcheck {
+    test         = ["CMD", "ak", "healthcheck"]
+    interval     = "30s"
+    timeout      = "10s"
+    retries      = 5
+    start_period = "60s"
+  }
+
+  dynamic "labels" {
+    for_each = local.platform_labels
+    content {
+      label = labels.key
+      value = labels.value
+    }
+  }
+}
