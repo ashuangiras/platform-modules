@@ -74,8 +74,9 @@ resource "docker_container" "redis" {
   ports {
     internal = 6379
     external = var.port
-    # NET-002: bind to localhost only by default — internal service, not for public access
-    ip = var.bind_address
+    # NET-002: internal data stores are pinned to localhost — the collector requires a
+    # byte-literal here and these services must never be off-host bindable.
+    ip = "127.0.0.1"
   }
 
   volumes {

@@ -57,7 +57,6 @@ resource "vault_kv_secret_v2" "pg_authentik" {
 | `superuser_password` | `string` | required | Superuser password (sensitive) |
 | `databases` | `map(object)` | `{}` | Per-service `{ password }` map (sensitive) |
 | `run_as_user` | `string` | `""` | Container user (empty = image default) |
-| `bind_address` | `string` | `"127.0.0.1"` | Host IP the 5432 port binds to (localhost-only default, NET-002) |
 
 ### TLS (deferred)
 
@@ -67,8 +66,10 @@ over macOS Docker Desktop bind mounts. Enabling it would additionally require `p
 (`hostssl`) and flipping the in-module `postgresql` provider from `sslmode = "disable"` to a
 verifying mode.
 
-The exposure is already mitigated: `bind_address` defaults to `127.0.0.1`, so the service is
-bound to localhost only and is **not reachable on the LAN**. TLS remains a tracked follow-up.
+The exposure is already mitigated: the 5432 port is **hardcoded** to bind `127.0.0.1`
+(localhost-only, per NET-002) and cannot be exposed off-host by configuration — the intended
+invariant for an internal data store. The service is **not reachable on the LAN**. TLS remains a
+tracked follow-up.
 
 
 ## Outputs
