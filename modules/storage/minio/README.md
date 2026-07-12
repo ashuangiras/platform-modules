@@ -78,6 +78,31 @@ terraform {
 | `network_name` | `string` | required | Docker network to attach to |
 | `restart_policy` | `string` | `"unless-stopped"` | Docker restart policy |
 | `labels` | `map(string)` | `{}` | Additional container labels |
+| `bind_address` | `string` | `"127.0.0.1"` | Host IP the exposed ports bind to (localhost-only default, NET-002) |
+| `tls_enabled` | `bool` | `false` | Opt-in TLS (mounts certs into `/certs` and adds `--certs-dir /certs`) |
+| `tls_cert_path` | `string` | `""` | Host path to server cert (PEM); mounted at `/certs/public.crt` |
+| `tls_key_path` | `string` | `""` | Host path to server key (PEM); mounted at `/certs/private.key` |
+| `tls_ca_path` | `string` | `""` | Optional host path to CA cert (PEM); mounted at `/certs/CAs/ca.crt` |
+
+### TLS (optional)
+
+TLS is **opt-in** and off by default (`tls_enabled = false`), so existing consumers run
+unchanged as plaintext HTTP.
+
+When `tls_enabled = true`:
+
+- The supplied cert material is bind-mounted read-only into MinIO's certs dir using MinIO's
+  required filenames:
+  - `tls_cert_path` → `/certs/public.crt`
+  - `tls_key_path`  → `/certs/private.key`
+  - `tls_ca_path`   → `/certs/CAs/ca.crt` (only when a CA path is supplied)
+- `--certs-dir /certs` is appended to the server command. MinIO auto-detects the certs and then
+  serves **HTTPS** on both the API (9000) and the console automatically.
+- The healthcheck runs `mc --insecure ready local` so the self-signed cert is trusted.
+
+`bind_address` defaults to `127.0.0.1` (localhost-only per NET-002); set it to `0.0.0.0`
+only if MinIO must be reachable on all host interfaces.
+
 
 ## Outputs
 

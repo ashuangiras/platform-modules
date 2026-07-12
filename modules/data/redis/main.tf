@@ -74,8 +74,8 @@ resource "docker_container" "redis" {
   ports {
     internal = 6379
     external = var.port
-    # NET-002: bind to localhost only — internal service, not for public access
-    ip = "127.0.0.1"
+    # NET-002: bind to localhost only by default — internal service, not for public access
+    ip = var.bind_address
   }
 
   volumes {
@@ -124,9 +124,13 @@ resource "docker_container" "redis" {
     }
   }
 
-  # Regenerate container if ACL content changes (forces restart on ACL update)
+  # Regenerate container if ACL content changes (forces restart on ACL update).
+  # On macOS Docker Desktop the kreuzwerker/docker provider auto-sets memory_swap
+  # to the memory limit and reads an empty capabilities block back, producing a
+  # perpetual diff that churns the container every apply — ignore both.
   lifecycle {
     replace_triggered_by = [local_file.acl]
+    ignore_changes       = [memory_swap, capabilities]
   }
 
   depends_on = [local_file.acl]

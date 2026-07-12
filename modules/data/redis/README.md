@@ -59,6 +59,18 @@ resource "vault_kv_secret_v2" "redis_authentik" {
 | `admin_password` | `string` | required | Admin ACL user password (sensitive) |
 | `acl_users` | `map(object)` | `{}` | Per-service `{ password, commands, key_prefix }` (sensitive) |
 | `run_as_user` | `string` | `""` | Container user (empty = image default) |
+| `bind_address` | `string` | `"127.0.0.1"` | Host IP the 6379 port binds to (localhost-only default, NET-002) |
+
+### TLS (deferred)
+
+Server-side TLS is **intentionally deferred** for this module. Redis TLS (`--tls-port`,
+`--tls-cert-file`, …) means running dual-port (plain + TLS) or disabling the plain port, and
+every client (Authentik, the `redis-cli` healthcheck) would need matching TLS client
+configuration — a higher blast radius than is warranted for the current bring-up.
+
+The exposure is already mitigated: `bind_address` defaults to `127.0.0.1`, so the service is
+bound to localhost only and is **not reachable on the LAN**. TLS remains a tracked follow-up.
+
 
 ## Outputs
 

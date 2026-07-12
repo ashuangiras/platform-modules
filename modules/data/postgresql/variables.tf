@@ -76,3 +76,9 @@ variable "cpu_shares" {
   type        = number
   default     = 512
 }
+
+variable "bind_address" {
+  description = "Host IP address to bind exposed container ports to. Defaults to 127.0.0.1 (localhost-only, the secure default per NET-002). Set to \"0.0.0.0\" only if the service must be reachable on all host interfaces."
+  type        = string
+  default     = "127.0.0.1"
+}

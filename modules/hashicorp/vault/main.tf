@@ -1,3 +1,7 @@
+locals {
+  vault_scheme = var.tls_enabled ? "https" : "http"
+}
+
 data "docker_registry_image" "vault" {
   name = "hashicorp/vault:${var.image_tag}"
 }
@@ -53,21 +57,33 @@ resource "docker_container" "vault" {
   # Set run_as_user = "" to use the image default (macOS Docker Desktop).
   user = var.run_as_user != "" ? var.run_as_user : null
 
+  # The kreuzwerker/docker provider reads a `capabilities` block back from the
+  # daemon even when none is declared (empty add/drop on macOS Docker Desktop),
+  # producing a perpetual "forces replacement" diff, and auto-sets memory_swap
+  # to the memory limit and reads it back as a perpetual in-place diff. Both
+  # churn — and thus RE-SEAL — Vault on every apply. Ignoring the drift keeps the
+  # already-running container stable across applies.
+  lifecycle {
+    ignore_changes = [capabilities, memory_swap]
+  }
+
   command = ["vault", "server", "-config=/vault/config"]
 
   env = [
     "VAULT_LOG_LEVEL=${var.vault_log_level}",
-    "VAULT_ADDR=http://0.0.0.0:${var.api_port}",
+    "VAULT_ADDR=${local.vault_scheme}://0.0.0.0:${var.api_port}",
   ]
 
   ports {
     internal = var.api_port
     external = var.api_port
+    ip       = var.bind_address
   }
 
   ports {
     internal = var.cluster_port
     external = var.cluster_port
+    ip       = var.bind_address
   }
 
   volumes {
@@ -90,12 +106,43 @@ resource "docker_container" "vault" {
     }
   }
 
+  # TLS server certificate — mounted read-only at a fixed container path so the
+  # operator-owned vault.hcl has a stable contract. Only mounted when TLS is on.
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_cert_path
+      container_path = "/vault/tls/tls.crt"
+      read_only      = true
+    }
+  }
+
+  # TLS server private key — mounted read-only at a fixed container path.
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_key_path
+      container_path = "/vault/tls/tls.key"
+      read_only      = true
+    }
+  }
+
+  # TLS CA certificate — optional; only mounted when a CA path is supplied.
+  dynamic "volumes" {
+    for_each = var.tls_enabled && var.tls_ca_path != "" ? [1] : []
+    content {
+      host_path      = var.tls_ca_path
+      container_path = "/vault/tls/ca.crt"
+      read_only      = true
+    }
+  }
+
   networks_advanced {
     name = var.network_name
   }
 
   healthcheck {
-    test         = ["CMD", "vault", "status", "-address=http://127.0.0.1:${var.api_port}"]
+    test         = var.tls_enabled ? ["CMD", "vault", "status", "-address=https://127.0.0.1:${var.api_port}", "-tls-skip-verify"] : ["CMD", "vault", "status", "-address=http://127.0.0.1:${var.api_port}"]
     interval     = "30s"
     timeout      = "10s"
     retries      = 5
@@ -149,7 +196,8 @@ resource "null_resource" "vault_init_unseal" {
     # Expand ~ in keys_path using shell, create parent dir, then init/unseal.
     command = <<-SHELL
       set -euo pipefail
-      export VAULT_ADDR="http://127.0.0.1:${var.api_port}"
+      export VAULT_ADDR="${local.vault_scheme}://127.0.0.1:${var.api_port}"
+      ${var.tls_enabled ? "export VAULT_SKIP_VERIFY=true" : ""}
       KEYS_FILE=$(eval echo "${var.keys_path}")
       mkdir -p "$(dirname "$KEYS_FILE")"
 

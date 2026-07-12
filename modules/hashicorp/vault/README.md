@@ -90,6 +90,42 @@ module "vault" {
 | `restart_policy` | `string` | `"unless-stopped"` | Docker restart policy |
 | `capabilities` | `list(string)` | `["IPC_LOCK"]` | Linux capabilities to add |
 | `labels` | `map(string)` | `{}` | Additional container labels |
+| `bind_address` | `string` | `"127.0.0.1"` | Host IP the exposed ports bind to (localhost-only default, NET-002) |
+| `tls_enabled` | `bool` | `false` | Opt-in TLS plumbing (cert mounts + HTTPS scheme for CLI/env/healthcheck) |
+| `tls_cert_path` | `string` | `""` | Host path to server cert (PEM); mounted at `/vault/tls/tls.crt` |
+| `tls_key_path` | `string` | `""` | Host path to server key (PEM); mounted at `/vault/tls/tls.key` |
+| `tls_ca_path` | `string` | `""` | Optional host path to CA cert (PEM); mounted at `/vault/tls/ca.crt` |
+
+### TLS (optional)
+
+TLS is **opt-in** and off by default (`tls_enabled = false`), so existing consumers run
+unchanged as plaintext HTTP.
+
+When `tls_enabled = true`, this module wires up the **plumbing** only:
+
+- The supplied cert material is bind-mounted read-only at fixed container paths so the
+  operator's `vault.hcl` has a stable contract:
+  - `tls_cert_path` → `/vault/tls/tls.crt`
+  - `tls_key_path`  → `/vault/tls/tls.key`
+  - `tls_ca_path`   → `/vault/tls/ca.crt` (only when a CA path is supplied)
+- `VAULT_ADDR`, the container healthcheck, and the host init/unseal CLI switch to `https://`
+  (with `-tls-skip-verify` / `VAULT_SKIP_VERIFY=true` so the self-signed CA is trusted).
+
+The **listener** is not set by this module — `platform-infrastructure` owns generating the
+`vault.hcl` mounted at `config_path`, and that listener stanza must set:
+
+```hcl
+listener "tcp" {
+  address       = "0.0.0.0:8200"
+  tls_disable   = false
+  tls_cert_file = "/vault/tls/tls.crt"
+  tls_key_file  = "/vault/tls/tls.key"
+}
+```
+
+`bind_address` defaults to `127.0.0.1` (localhost-only per NET-002); set it to `0.0.0.0`
+only if Vault must be reachable on all host interfaces.
+
 
 ## Outputs
 

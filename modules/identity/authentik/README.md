@@ -60,6 +60,31 @@ resource "vault_kv_secret_v2" "authentik_admin" {
 | `bootstrap_admin_password` | `string` | required | Bootstrap admin password (sensitive, written to Vault) |
 | `error_reporting_enabled` | `bool` | `false` | Disable for air-gapped environments |
 | `run_as_user` | `string` | `""` | Container user (empty = image default) |
+| `bind_address` | `string` | `"127.0.0.1"` | Host IP the server ports bind to (localhost-only default, NET-002) |
+| `tls_enabled` | `bool` | `false` | Opt-in: mount custom cert material into `/certs` on the server |
+| `tls_cert_path` | `string` | `""` | Host path to server cert (PEM); mounted at `/certs/tls.crt` |
+| `tls_key_path` | `string` | `""` | Host path to server key (PEM); mounted at `/certs/tls.key` |
+| `tls_ca_path` | `string` | `""` | Optional host path to CA cert (PEM); mounted at `/certs/ca.crt` |
+
+### TLS (optional)
+
+Authentik already terminates TLS on 9443 using a bundled self-signed certificate, so by
+default (`tls_enabled = false`) behavior is unchanged.
+
+When `tls_enabled = true`, custom cert material is bind-mounted read-only into the **server**
+container at Authentik's standard discovery dir `/certs`:
+
+- `tls_cert_path` → `/certs/tls.crt`
+- `tls_key_path`  → `/certs/tls.key`
+- `tls_ca_path`   → `/certs/ca.crt` (only when a CA path is supplied)
+
+Authentik's worker discovers certs placed in `/certs`. **Selecting the custom cert for the
+default brand is a consumer / day-2 configuration step** (done via the Authentik admin UI or
+the integrations provider). The worker has no exposed ports and is left unchanged.
+
+`bind_address` defaults to `127.0.0.1` (localhost-only per NET-002); set it to `0.0.0.0`
+only if Authentik must be reachable on all host interfaces.
+
 
 ## Outputs
 

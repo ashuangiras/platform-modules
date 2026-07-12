@@ -10,12 +10,12 @@ output "container_name" {
 
 output "api_endpoint" {
   description = "S3-compatible API endpoint reachable from the host."
-  value       = "http://localhost:${var.api_port}"
+  value       = "${var.tls_enabled ? "https" : "http"}://localhost:${var.api_port}"
 }
 
 output "console_url" {
   description = "MinIO web console URL reachable from the host."
-  value       = "http://localhost:${var.console_port}"
+  value       = "${var.tls_enabled ? "https" : "http"}://localhost:${var.console_port}"
 }
 
 output "volume_name" {
