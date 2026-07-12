@@ -86,6 +86,36 @@ module "consul" {
 | `log_level` | `string` | `"info"` | Log verbosity |
 | `restart_policy` | `string` | `"unless-stopped"` | Docker restart policy |
 | `labels` | `map(string)` | `{}` | Additional container labels |
+| `bind_address` | `string` | `"127.0.0.1"` | Host IP the exposed ports bind to (localhost-only default, NET-002) |
+| `https_port` | `number` | `8501` | Host port for the HTTPS API (only exposed when `tls_enabled = true`) |
+| `tls_enabled` | `bool` | `false` | Opt-in TLS (cert mounts + generated `tls.json` enabling the HTTPS API) |
+| `tls_cert_path` | `string` | `""` | Host path to server cert (PEM); mounted at `/consul/tls/tls.crt` |
+| `tls_key_path` | `string` | `""` | Host path to server key (PEM); mounted at `/consul/tls/tls.key` |
+| `tls_ca_path` | `string` | `""` | Optional host path to CA cert (PEM); mounted at `/consul/tls/ca.crt` |
+
+### TLS (optional)
+
+TLS is **opt-in** and off by default (`tls_enabled = false`), so existing consumers run
+unchanged as plaintext HTTP.
+
+When `tls_enabled = true`:
+
+- The supplied cert material is bind-mounted read-only at fixed container paths:
+  - `tls_cert_path` → `/consul/tls/tls.crt`
+  - `tls_key_path`  → `/consul/tls/tls.key`
+  - `tls_ca_path`   → `/consul/tls/ca.crt` (only when a CA path is supplied)
+- A generated `tls.json` is dropped into `config_path` and loaded from the config-dir. It sets
+  `ports.https = 8501` and a `tls.defaults` stanza with `verify_incoming = false` and
+  `verify_outgoing = true` when a CA is supplied (otherwise `false`).
+- The HTTPS API is exposed on the host at `https_port` (default 8501).
+
+**HTTP (8500) intentionally stays open during staging bring-up** so the `consul members`
+healthcheck and initial bootstrap keep working. Hardening to HTTPS-only is a documented
+follow-up.
+
+`bind_address` defaults to `127.0.0.1` (localhost-only per NET-002); set it to `0.0.0.0`
+only if Consul must be reachable on all host interfaces.
+
 
 ## Outputs
 

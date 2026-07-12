@@ -30,7 +30,7 @@ resource "docker_container" "minio" {
   # Run as non-root user (RUN-001)
   user = "1000:1000"
 
-  command = ["server", "/data", "--console-address", ":${var.console_port}"]
+  command = concat(["server", "/data", "--console-address", ":${var.console_port}"], var.tls_enabled ? ["--certs-dir", "/certs"] : [])
 
   env = [
     "MINIO_ROOT_USER=${var.root_user}",
@@ -43,11 +43,13 @@ resource "docker_container" "minio" {
   ports {
     internal = 9000
     external = var.api_port
+    ip       = var.bind_address
   }
 
   ports {
     internal = var.console_port
     external = var.console_port
+    ip       = var.bind_address
   }
 
   volumes {
@@ -55,12 +57,49 @@ resource "docker_container" "minio" {
     container_path = "/data"
   }
 
+  # TLS server certificate — MinIO's required filename in its certs dir.
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_cert_path
+      container_path = "/certs/public.crt"
+      read_only      = true
+    }
+  }
+
+  # TLS server private key — MinIO's required filename in its certs dir.
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_key_path
+      container_path = "/certs/private.key"
+      read_only      = true
+    }
+  }
+
+  # TLS CA certificate — optional; MinIO trusts CAs placed under /certs/CAs.
+  dynamic "volumes" {
+    for_each = var.tls_enabled && var.tls_ca_path != "" ? [1] : []
+    content {
+      host_path      = var.tls_ca_path
+      container_path = "/certs/CAs/ca.crt"
+      read_only      = true
+    }
+  }
+
   networks_advanced {
     name = var.network_name
   }
 
   healthcheck {
-    test         = ["CMD", "mc", "ready", "local"]
+    # Under TLS the built-in `local` mc alias still points at http://, so `mc ready
+    # local` reports "not ready" against the https listener. Re-point the alias to
+    # https (self-signed → --insecure) using the root creds from the container env
+    # before checking readiness.
+    test = var.tls_enabled ? [
+      "CMD-SHELL",
+      "mc alias set local https://127.0.0.1:9000 \"$MINIO_ROOT_USER\" \"$MINIO_ROOT_PASSWORD\" --insecure >/dev/null 2>&1; mc --insecure ready local",
+    ] : ["CMD", "mc", "ready", "local"]
     interval     = "30s"
     timeout      = "20s"
     retries      = 3
@@ -83,5 +122,12 @@ resource "docker_container" "minio" {
       label = labels.key
       value = labels.value
     }
+  }
+
+  # On macOS Docker Desktop the kreuzwerker/docker provider auto-sets memory_swap
+  # to the memory limit and reads an empty capabilities block back, producing a
+  # perpetual diff that churns the container on every apply — ignore both.
+  lifecycle {
+    ignore_changes = [memory_swap, capabilities]
   }
 }

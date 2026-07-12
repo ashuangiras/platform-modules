@@ -83,3 +83,39 @@ variable "cpu_shares" {
   type        = number
   default     = 256
 }
+
+variable "https_port" {
+  description = "Host port for the Consul HTTPS API (only exposed when tls_enabled = true)."
+  type        = number
+  default     = 8501
+}
+
+variable "bind_address" {
+  description = "Host IP address to bind exposed container ports to. Defaults to 127.0.0.1 (localhost-only, the secure default per NET-002). Set to \"0.0.0.0\" only if the service must be reachable on all host interfaces."
+  type        = string
+  default     = "127.0.0.1"
+}
+
+variable "tls_enabled" {
+  description = "Enable TLS on the Consul HTTPS listener. When false (default) the service runs plaintext, preserving current behavior. When true, cert material is bind-mounted read-only and a generated tls.json enables the HTTPS API on port 8501."
+  type        = bool
+  default     = false
+}
+
+variable "tls_cert_path" {
+  description = "Absolute host path to the Consul server certificate (PEM). Bind-mounted read-only into the container at /consul/tls/tls.crt when tls_enabled = true."
+  type        = string
+  default     = ""
+}
+
+variable "tls_key_path" {
+  description = "Absolute host path to the Consul server private key (PEM). Bind-mounted read-only into the container at /consul/tls/tls.key when tls_enabled = true."
+  type        = string
+  default     = ""
+}
+
+variable "tls_ca_path" {
+  description = "Absolute host path to the CA certificate (PEM) that signed the Consul server cert. Optional; bind-mounted read-only at /consul/tls/ca.crt when set and tls_enabled = true."
+  type        = string
+  default     = ""
+}

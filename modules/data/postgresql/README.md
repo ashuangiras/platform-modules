@@ -58,6 +58,20 @@ resource "vault_kv_secret_v2" "pg_authentik" {
 | `databases` | `map(object)` | `{}` | Per-service `{ password }` map (sensitive) |
 | `run_as_user` | `string` | `""` | Container user (empty = image default) |
 
+### TLS (deferred)
+
+Server-side TLS is **intentionally deferred** for this module. Postgres requires the server
+private key to be owned by the DB user (UID 999) with `0600` permissions — which is unreliable
+over macOS Docker Desktop bind mounts. Enabling it would additionally require `pg_hba` changes
+(`hostssl`) and flipping the in-module `postgresql` provider from `sslmode = "disable"` to a
+verifying mode.
+
+The exposure is already mitigated: the 5432 port is **hardcoded** to bind `127.0.0.1`
+(localhost-only, per NET-002) and cannot be exposed off-host by configuration — the intended
+invariant for an internal data store. The service is **not reachable on the LAN**. TLS remains a
+tracked follow-up.
+
+
 ## Outputs
 
 | Name | Sensitive | Description |

@@ -10,12 +10,12 @@ output "container_name" {
 
 output "api_address" {
   description = "Vault API address reachable from the host."
-  value       = "http://localhost:${var.api_port}"
+  value       = "${var.tls_enabled ? "https" : "http"}://localhost:${var.api_port}"
 }
 
 output "api_address_internal" {
   description = "Vault API address reachable from other containers on the same Docker network."
-  value       = "http://${var.container_name}:${var.api_port}"
+  value       = "${var.tls_enabled ? "https" : "http"}://${var.container_name}:${var.api_port}"
 }
 
 output "root_token" {

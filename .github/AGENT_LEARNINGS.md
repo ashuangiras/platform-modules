@@ -4,6 +4,23 @@ This ledger records meaningful updates to the agent configuration in `platform-m
 
 ---
 
+## 2026-07-12 — feat(security): P0 security tier — localhost binding + TLS + idempotency
+
+**Change Record:** CHG-20260712-002
+
+- **Localhost binding (P0-2):** added a `bind_address` variable (default `127.0.0.1`) to postgresql, redis, consul, vault, minio, and authentik, wiring it to the `ip=` field of every externally-published container port so services no longer bind `0.0.0.0` by default. Operators opt into wider exposure explicitly.
+- **TLS capability (P0-1):** added `tls_enabled` plus certificate-path variables to vault, consul, minio, and authentik, with listener config and cert-volume mounts wired through. postgres/redis TLS is intentionally deferred and documented in their READMEs rather than half-implemented.
+- **Scheme-aware outputs:** vault `api_address` / `api_address_internal` and minio `api_endpoint` / `console_url` now emit `https://` when `tls_enabled` is set (previously hardcoded `http://`, which silently broke downstream integrations the moment TLS was turned on).
+- **Vault memory 256 → 512 MiB:** raised the `memory_limit_mib` default because 256 MiB OOM-killed Vault on a live staging deploy; added an inline comment explaining the floor.
+- **Idempotency (macOS docker provider):** added `lifecycle { ignore_changes = [memory_swap, capabilities] }` to all 7 `docker_container` resources (vault, consul, minio, postgresql, redis, authentik server + worker). Without it the provider reported perpetual diffs on `memory_swap`/`capabilities`, churning/restarting containers every apply and re-sealing Vault.
+- **minio TLS healthcheck:** switched the healthcheck to a `CMD-SHELL` that re-points the built-in `local` mc alias to `https://127.0.0.1:9000` with `--insecure` before running `mc ready`; the default alias is `http` and falsely reported "not ready" under TLS.
+- **NET-002 remediation (postgres/redis):** pinned the postgresql (5432) and redis (6379) published ports to the byte-literal `ip = "127.0.0.1"` and removed the now-dead `bind_address` variable from both `data/*` modules (variables.tf + README inputs row + prose). The v4.0.3 NET-002 collector is name-scoped to `docker_container` resources matching postgres/postgresql/redis and matches on a literal `127.0.0.1` only — it does not resolve `ip = var.bind_address`, so the parameterized pattern read as non-compliant for these two internal data stores. vault/consul/minio/authentik are out of NET-002 scope and keep their `bind_address` variable unchanged.
+- Proven on a live staging deploy: 7/7 containers healthy, TLS terminated, configuration converged and idempotent across repeated applies.
+
+**Rule learned:** On the macOS docker provider, `memory_swap` and `capabilities` are re-computed on every apply, so any long-lived `docker_container` resource MUST `ignore_changes` them or the module is non-idempotent — the churn silently restarts stateful containers and re-seals Vault, which looks like a runtime bug but is really a module-authoring omission. Second: the instant you introduce a `tls_enabled` toggle, every output that emits a URL must become scheme-aware in the same change — a hardcoded `http://` output is a latent break that only surfaces downstream when a consumer follows the address over the wire. Third: the v4.0.3 NET-002 collector is name-scoped to postgres/redis `docker_container` resources and matches a literal `127.0.0.1` only (it does not resolve `var`/locals), so internal data stores that must never be off-host bindable have to use a hardcoded localhost bind rather than a parameterized `bind_address`; the parameterized pattern is fine and stays for vault/consul/minio/authentik, which NET-002 does not inspect.
+
+---
+
 ## 2026-07-12 — chore: bump platform-compliance ref v4.0.0 → v4.0.3 (patch)
 
 **Change Record:** CHG-20260712-001

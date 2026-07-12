@@ -44,7 +44,8 @@ resource "docker_container" "postgresql" {
   ports {
     internal = 5432
     external = var.port
-    # NET-002: bind to localhost only — internal service, not for public access
+    # NET-002: internal data stores are pinned to localhost — the collector requires a
+    # byte-literal here and these services must never be off-host bindable.
     ip = "127.0.0.1"
   }
 
@@ -86,6 +87,13 @@ resource "docker_container" "postgresql" {
       label = labels.key
       value = labels.value
     }
+  }
+
+  # On macOS Docker Desktop the kreuzwerker/docker provider auto-sets memory_swap
+  # to the memory limit and reads an empty capabilities block back, producing a
+  # perpetual diff that churns the container on every apply — ignore both.
+  lifecycle {
+    ignore_changes = [memory_swap, capabilities]
   }
 }
 

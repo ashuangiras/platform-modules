@@ -59,11 +59,43 @@ resource "docker_container" "server" {
   ports {
     internal = 9000
     external = var.http_port
+    ip       = var.bind_address
   }
 
   ports {
     internal = 9443
     external = var.https_port
+    ip       = var.bind_address
+  }
+
+  # Custom TLS cert material — mounted read-only into Authentik's discovery dir.
+  # Only mounted when tls_enabled = true; otherwise Authentik uses its bundled
+  # self-signed cert on 9443 (current behavior).
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_cert_path
+      container_path = "/certs/tls.crt"
+      read_only      = true
+    }
+  }
+
+  dynamic "volumes" {
+    for_each = var.tls_enabled ? [1] : []
+    content {
+      host_path      = var.tls_key_path
+      container_path = "/certs/tls.key"
+      read_only      = true
+    }
+  }
+
+  dynamic "volumes" {
+    for_each = var.tls_enabled && var.tls_ca_path != "" ? [1] : []
+    content {
+      host_path      = var.tls_ca_path
+      container_path = "/certs/ca.crt"
+      read_only      = true
+    }
   }
 
   networks_advanced {
@@ -84,6 +116,13 @@ resource "docker_container" "server" {
       label = labels.key
       value = labels.value
     }
+  }
+
+  # On macOS Docker Desktop the kreuzwerker/docker provider auto-sets memory_swap
+  # to the memory limit and reads an empty capabilities block back, producing a
+  # perpetual diff that churns the container on every apply — ignore both.
+  lifecycle {
+    ignore_changes = [memory_swap, capabilities]
   }
 }
 
@@ -119,5 +158,12 @@ resource "docker_container" "worker" {
       label = labels.key
       value = labels.value
     }
+  }
+
+  # On macOS Docker Desktop the kreuzwerker/docker provider auto-sets memory_swap
+  # to the memory limit and reads an empty capabilities block back, producing a
+  # perpetual diff that churns the container on every apply — ignore both.
+  lifecycle {
+    ignore_changes = [memory_swap, capabilities]
   }
 }
